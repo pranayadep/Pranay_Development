@@ -1,1 +1,221 @@
-Cart
+package selenium4differences;
+
+import org.testng.annotations.Test;
+import org.testng.annotations.BeforeTest;
+
+import java.time.Duration;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Keys;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.interactions.Actions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Reporter;
+import org.testng.annotations.AfterTest;
+
+public class InterviewAssessment {
+	public static WebDriver driver;
+	public static WebElement eleSearched;
+
+	@Test
+	public void performActions() {
+		try {
+			driver.get("https://www.amazon.in/");
+			elementSearch("//*[@id='nav-cart-count']");
+			if (eleSearched.getText().equals("0")) {
+				report("Cart is empty on the page");
+				eleSearched.click();
+				elementSearch("//*[contains(text(),'Sign in to your account')]");
+				if (eleSearched.isDisplayed())
+					report("SignIn button is shown and enabled");
+				elementSearch("//*[contains(text(),'Sign up now')]");
+				if (eleSearched.isDisplayed())
+					report("SignUp button is shown and enabled");
+				Select productCategoryDropdown = new Select(
+						driver.findElement(By.xpath("//select[@id='searchDropdownBox']")));
+				productCategoryDropdown.selectByVisibleText("Electronics");
+				report("Selected the value Electronics from the dropdown menu");
+				elementSearch("//input[contains(@id,'searchtextbox')]");
+				eleSearched.sendKeys("Iphone 13");
+				eleSearched.sendKeys(Keys.ENTER);
+				report("Successfully entered Iphone 13 and clicked on Enter");
+				String originalWindow = driver.getWindowHandle();
+				assert driver.getWindowHandles().size() == 1;
+				driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(20));
+				elementSearch("(//a/span[contains(text(),'iPhone 13')])[1]").click();
+				report("Clicked on APple iphone 13");
+				for (String windowHandle : driver.getWindowHandles()) {
+					if (!originalWindow.contentEquals(windowHandle)) {
+						driver.switchTo().window(windowHandle);
+						report("Switched to the new tab");
+						break;
+					}
+				}
+				elementSearch("//span[.='Add to Cart']/preceding-sibling::input").click();
+				report("Clicked on Add to Cart button");
+				timeOut(5);
+				assert elementSearch("//div[@id='attachDisplayAddBaseAlert']/span[contains(text(),'Added to Cart')]")
+						.isDisplayed();
+				report("Product added successfully to the cart");
+				if (elementSearch("//*[.='Cart subtotal']//parent::span").getText().toString().contains("1 item")) {
+					report("Suceessfully added 1 item and count validated");
+				} else {
+					System.out.println(eleSearched.getText());
+					report("Incorrect count present for the product - stopping the TC");
+					assert false;
+				}
+				elementSearch("//a[contains(@aria-label,'Exit')]").click();
+				report("Closed the popup");
+				timeOut(5);
+				jsClick("//*[@id='bylineInfo']");
+				report("Clicked on Visit the apple store link");
+				timeOut(5);
+				/******************************************************/
+				Actions actions = new Actions(driver);
+				WebElement menuElement = elementSearch("(//a[.='Apple Watch'])[1]");
+				menuElement.click();
+				WebElement subMenuElement = elementSearch("(//a[.='Apple Watch Series 8 (GPS)'])[1]");
+				// actions.moveToElement(menuElement).click().perform();
+				actions.moveToElement(subMenuElement).click().perform();
+				report("Selected the apple watch series 8 from the menu");
+				jsClick("(//div[contains(@class,'Editorial')]/a)[1]");
+				report("Selected the first appearing apple watch");
+				timeOut(5);
+				Select selectQuantity = new Select(driver.findElement(By.xpath("//select[@name='quantity']")));
+				selectQuantity.selectByVisibleText("3");
+				report("Selected the quantity as 3");
+				timeOut(5);
+				elementSearch("//span[.='Add to Cart']/preceding-sibling::input").click();
+				report("Clicked on Add to Cart button");
+				timeOut(10);
+				elementSearch("//a[contains(@aria-label,'Exit')]").click();
+				timeOut(10);
+				report("Closed the popup");
+				verifyCartTotal("4");
+				/******************************************************/
+				elementSearch("//input[contains(@id,'searchtextbox')]");
+				eleSearched.sendKeys("Dell Laptop");
+				eleSearched.sendKeys(Keys.ENTER);
+				report("Seached Dell Laptop");
+				String newWindow1 = driver.getWindowHandle();
+				assert driver.getWindowHandles().size() == 2;
+				elementSearch("(//div[@class='a-section'])[1]").click();
+				for (String windowHandle : driver.getWindowHandles()) {
+					if ((!newWindow1.contentEquals(windowHandle) && (!originalWindow.contentEquals(windowHandle)))) {
+						driver.switchTo().window(windowHandle);
+						report("Switched to the new tab for Dell laptop");
+						break;
+					}
+				}
+				timeOut(5);
+				Select selectQuantityLaptop = new Select(driver.findElement(By.xpath("//select[@name='quantity']")));
+				selectQuantityLaptop.selectByVisibleText("2");
+				report("Selected the quantity as 2");
+				elementSearch("//span[.='Add to Cart']/preceding-sibling::input").click();
+				report("Clicked on Add to Cart button");
+				timeOut(5);
+				try {
+					elementSearch("(//span[contains(text(),'Skip')]//preceding-sibling::input)[1]").click();
+				} catch (Exception e) {
+					elementSearch("//a[contains(@aria-label,'Exit')]").click();
+				}
+				timeOut(5);
+				verifyCartTotal("6");
+				/******************************************************/
+				Select appleWatchQty1 = new Select(driver.findElement(By
+						.xpath("//span[contains(text(),'Apple Watch')]//ancestor::ul/following-sibling::div//select")));
+				appleWatchQty1.selectByVisibleText("2");
+				report("Updated the quantity of watch to 2");
+				timeOut(5);
+				verifyCartTotal("5");
+				Select appleWatchQty2 = new Select(driver.findElement(By
+						.xpath("//span[contains(text(),'Apple Watch')]//ancestor::ul/following-sibling::div//select")));
+				appleWatchQty2.selectByVisibleText("1");
+				timeOut(5);
+				verifyCartTotal("4");
+				report("**************** Test Case Completed ***************");
+
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			assert false;
+		}
+	}
+
+	@BeforeTest
+	public void beforeTest() {
+		driver = configureBrowserChrome();
+		driver.manage().window().maximize();
+	}
+
+	@AfterTest
+	public void afterTest() {
+		driver.quit();
+	}
+
+	public WebDriver configureBrowserChrome() {
+		WebDriver driverObj;
+		System.setProperty("webdriver.chrome.driver", "C:/Data/programs/git/chromedriver.exe");
+		ChromeOptions options = new ChromeOptions();
+		options.addArguments("--remote-allow-origins=*");
+		options.addArguments("--incognito");
+		options.setExperimentalOption("useAutomationExtension", false);
+		driverObj = new ChromeDriver(options);
+		return driverObj;
+	}
+
+	public static void report(String message) {
+		System.out.println(message);
+		Reporter.log(message);
+	}
+
+	public void scrollIntoView(WebElement eleSearched) {
+		String script = "arguments[0].scrollIntoView({behavior: \"auto\", block: \"center\", inline: \"center\"});";
+		((JavascriptExecutor) driver).executeScript(script, eleSearched);
+	}
+
+	public static WebElement elementSearch(String xpath) {
+		eleSearched = null;
+		WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+		eleSearched = wait.until(ExpectedConditions.visibilityOf(driver.findElement(By.xpath(xpath))));
+		return eleSearched;
+	}
+
+	public void jsClick(String eleXpath) {
+		elementSearch(eleXpath);
+		scrollIntoView(eleSearched);
+		JavascriptExecutor executor = (JavascriptExecutor) driver;
+		executor.executeScript("arguments[0].click();", eleSearched);
+	}
+
+	public static void timeOut(int time) {
+		try {
+			time = time * 100;
+			Thread.sleep(time);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void verifyCartTotal(String value) {
+		elementSearch("//a[@id='nav-cart']").click();
+		report("Click on the Cart button");
+		assert driver.getTitle().contains("Shopping Cart");
+		report("Navigated to the Cart section");
+		elementSearch("(//form//*[contains(text(),'Subtotal')])[2]");
+		if (eleSearched.getText().contains(value)) {
+			report("Cart information shown is valid : " + value + "items");
+		} else {
+			report("Cart value not matching with " + value + " items");
+			assert false;
+		}
+		timeOut(5);
+	}
+
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite parallel="tests" name="SeleniumChanges">
+	<test thread-count="2" parallel="tests" name="InterviewAssessment">
+		<classes>
+			<class name="selenium4differences.InterviewAssessment"></class>
+		</classes>
+	</test> <!-- TestClass -->
+</suite> <!-- SeleniumChanges -->
